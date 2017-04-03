@@ -1,0 +1,23 @@
+{
+  "name": "sumanth",
+  "version": "1.0.0",
+  "description": "Backend Dr beacon",
+  "main": "index.js",
+  "dependencies": {
+    "mongodb": "^2.2.25"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sumanthm1019/dr.beacon.git"
+  },
+  "author": "sumanth",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sumanthm1019/dr.beacon/issues"
+  },
+  "homepage": "https://github.com/sumanthm1019/dr.beacon#readme"
+}
