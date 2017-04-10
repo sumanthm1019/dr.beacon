@@ -58,6 +58,7 @@ app.post('/api/user_profile_update', (req, res) => {
 json response after beacon find call
 {
 	ignore : true/false (should application ignore this response),
+	activitytype : water/food/allergy
 	message: to be displayed,
 	feedback : feedback message for user feedback,
 	image url : image background
@@ -79,7 +80,7 @@ app.post('/api/find/1', (req, res) => {
        {
        		//send water fountain nearby
        		db.collection('Beacon_Data').find({"b1.name" : "Water Fountain"}).toArray(function(err, docs) {
-       			res.status(200).json({ ignore: false, message : docs[0].b1.message, feedback : docs[0].b1.feedback});
+       			res.status(200).json({ ignore: false, activitytype: "water", message : docs[0].b1.message, feedback : docs[0].b1.feedback});
        		});
 
        }
@@ -135,7 +136,7 @@ app.post('/api/find/2', (req, res) => {
        {
        		//send water fountain nearby
        		db.collection('Beacon_Data').find({"b2.name" : "Pollen Alert"}).toArray(function(err, docs) {
-       			res.status(200).json({ignore : false, message : docs[0].b2.message, feedback : docs[0].b2.feedback});
+       			res.status(200).json({ignore : false, activitytype: "allergy", message : docs[0].b2.message, feedback : docs[0].b2.feedback});
        		});
 
        }
@@ -197,7 +198,7 @@ app.post('/api/find/3', (req, res) => {
 
 		}
 		var msg = "According to our experts, the following foods around you, suit you the best at this time of the day";
-		res.status(200).json({ignore : false, message: msg, imageurl: "", response});
+		res.status(200).json({ignore : false, activitytype: "food", message: msg, imageurl: "", response});
 
 	});
 
@@ -205,6 +206,141 @@ app.post('/api/find/3', (req, res) => {
 });
 
 
+app.post('/api/find/4', (req, res) => {
+	var searchkey;
+	var disease;
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+       searchkey = docs[0].beacon.food;
+
+	});
+
+
+	db.collection('Beacon_Data').find({"_id": "Beacon Database"}).toArray(function(err, docs) {
+		var response = {};
+		var obj = docs[0].b4.menu;
+		for (var key in obj) {
+
+			for (var k in obj[key])
+			{
+				x = {};
+				x[k] = obj[key][k];
+
+				if(JSON.stringify(x) == JSON.stringify(searchkey))
+				{
+					var name = obj[key].name;
+					var restaurant = obj[key].restaurant;
+					response[name] = restaurant;
+				}
+
+			}
+
+		}
+		var msg = "According to our experts, the following foods around you, suit you the best at this time of the day";
+		res.status(200).json({ignore : false, activitytype: "food", message: msg, imageurl: "", response});
+
+	});
+
+	
+});
+
+app.post('/api/find/5', (req, res) => {
+	var searchkey;
+	var disease;
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+       searchkey = docs[0].beacon.food;
+
+	});
+
+
+	db.collection('Beacon_Data').find({"_id": "Beacon Database"}).toArray(function(err, docs) {
+		var response = {};
+		var obj = docs[0].b5.menu;
+		for (var key in obj) {
+
+			for (var k in obj[key])
+			{
+				x = {};
+				x[k] = obj[key][k];
+
+				if(JSON.stringify(x) == JSON.stringify(searchkey))
+				{
+					var name = obj[key].name;
+					var restaurant = obj[key].restaurant;
+					response[name] = restaurant;
+				}
+
+			}
+
+		}
+		var msg = "According to our experts, the following foods around you, suit you the best at this time of the day";
+		res.status(200).json({ignore : false, activitytype: "food", message: msg, imageurl: "", response});
+
+	});
+
+	
+});
+
+app.post('/api/find/6', (req, res) => {
+
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+       var gym = docs[0].beacon.gym;
+       if(gym)
+       {
+       		//send water fountain nearby
+       		db.collection('Beacon_Data').find({"b6.name" : "Gym"}).toArray(function(err, docs) {
+       			res.status(200).json({ignore : false, activitytype: "physical", message : docs[0].b6.message, feedback : docs[0].b6.feedback});
+       		});
+
+       }
+       else
+       {
+       		res.status(200).json({
+       			ignore : true
+       		});
+       }
+	});
+});
+
+app.post('/api/find/7', (req, res) => {
+
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+       var stairs = docs[0].beacon.stairs;
+       if(stairs)
+       {
+       		//send water fountain nearby
+       		db.collection('Beacon_Data').find({"b7.name" : "Stairs"}).toArray(function(err, docs) {
+       			res.status(200).json({ignore : false, activitytype: "physical", message : docs[0].b7.message, feedback : docs[0].b7.feedback});
+       		});
+
+       }
+       else
+       {
+       		res.status(200).json({
+       			ignore : true
+       		});
+       }
+	});
+});
+app.post('/api/find/8', (req, res) => {
+
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+       var cycling = docs[0].beacon.cycling;
+       if(cycling)
+       {
+       		//send water fountain nearby
+       		db.collection('Beacon_Data').find({"b8.name" : "Cycling"}).toArray(function(err, docs) {
+       			res.status(200).json({ignore : false, activitytype: "physical", message : docs[0].b8.message, feedback : docs[0].b8.feedback});
+       		});
+
+       }
+       else
+       {
+       		res.status(200).json({
+       			ignore : true
+       		});
+       }
+	});
+});
 
 app.post('/api/check_username', (req, res) => {
 	db.collection('User_Profile').count({"_id": req.body._id}, function(err, count) {
