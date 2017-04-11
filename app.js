@@ -47,6 +47,27 @@ app.post('/api/user_profile_update', (req, res) => {
 	    }
 	});
 
+	//Calculate BMI	
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+       var ht = docs[0].height;
+       var wt = docs[0].weight;
+	   
+	   wt  = wt * 0.45; //convert to kgs
+	   ht  = ht * 0.01; //convert to metres
+	   ht  = ht * ht;   //squaring from step 2
+	   bmi = wt/ht;     //divide step 1 by step 3
+	   console.log ("BMI");	   
+	   console.log(bmi);
+	   
+       db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.bmi" : bmi }});
+	});
+	
+	//Update gym, cycling and staircase information
+	db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.gym" : true }});	
+	db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.cycling" : true }});
+	db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.gym_done" : false }});
+	db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.cycling_done" : false }});
+	db.collection('User_Profile').update({"_id" : req.body._id}, {$set: {"beacon.stairs" : 0 }}, {upsert : true});
 
 
 	res.status(200).json({
@@ -280,17 +301,19 @@ app.post('/api/find/5', (req, res) => {
 	
 });
 
+//-------------------------------------------6.Stairs---------------------------------------------
 app.post('/api/find/6', (req, res) => {
-
-	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
-       var gym = docs[0].beacon.gym;
-       if(gym)
+	
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {       
+	   var gym_done = docs[0].beacon.gym_done;  
+	   var activity_level = docs[0].activitylevel;
+	   console.log("Activity="+activity_level);
+       if(!gym_done && activity_level>2)
        {
-       		//send water fountain nearby
+       		//send gym membership nearby
        		db.collection('Beacon_Data').find({"b6.name" : "Gym"}).toArray(function(err, docs) {
        			res.status(200).json({ignore : false, activitytype: "physical", message : docs[0].b6.message, feedback : docs[0].b6.feedback});
        		});
-
        }
        else
        {
@@ -301,37 +324,105 @@ app.post('/api/find/6', (req, res) => {
 	});
 });
 
+
+
+app.post('/api/feedback/6', (req, res) => {
+	var feedback = req.body.feedback;
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+	    
+		if(feedback)
+		{			
+			//update
+			db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.gym_done" : true }});
+		}
+	});
+	res.status(200).json({
+	    success: true
+	});
+});
+//-------------------------------------------6.Gym---------------------------------------------
+//-------------------------------------------7.Stairs---------------------------------------------
+//Beacon 7 : Staircase
 app.post('/api/find/7', (req, res) => {
 
 	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
        var stairs = docs[0].beacon.stairs;
-       if(stairs)
-       {
-       		//send water fountain nearby
-       		db.collection('Beacon_Data').find({"b7.name" : "Stairs"}).toArray(function(err, docs) {
-       			res.status(200).json({ignore : false, activitytype: "physical", message : docs[0].b7.message, feedback : docs[0].b7.feedback});
-       		});
+	   var bmi = docs[0].beacon.bmi;
+	   var activity_level = docs[0].activitylevel;
 
-       }
+	//Healthy
+	console.log ("Activity level="+activity_level+" bmi="+bmi+" stairs="+stairs);
+	if (activity_level>2) {
+	   if (bmi > 19 && bmi < 25 && stairs < 1) {		  
+       		//send stairs info nearby
+			console.log("Healthy condition");
+       		db.collection('Beacon_Data').find({"b7.name" : "Stairs"}).toArray(function(err, docs) {
+       			res.status(200).json({ ignore: false, activitytype: "stairs", message : docs[0].b7.message, feedback : docs[0].b7.feedback});
+				});			 
+		//Overweight or Obese
+	   } else if (bmi > 25 && stairs < 20) {		   
+       		//send stairs info nearby
+			console.log("Obese condition");
+       		db.collection('Beacon_Data').find({"b7.name" : "Stairs"}).toArray(function(err, docs) {
+       			res.status(200).json({ ignore: false, activitytype: "stairs", message : docs[0].b7.message, feedback : docs[0].b7.feedback});
+				});		   
+	   }       
        else
        {
+		   console.log("Ignore condition");
        		res.status(200).json({
        			ignore : true
        		});
        }
+	}
 	});
 });
-app.post('/api/find/8', (req, res) => {
+
+app.post('/api/update/7', (req, res) => {
 
 	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
-       var cycling = docs[0].beacon.cycling;
-       if(cycling)
+       var stairs = docs[0].beacon.stairs;
+       stairs = stairs + req.body.stairs;
+       db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.stairs" : stairs }});
+	});
+	res.status(200).json({
+	    success: true
+	});
+});
+
+app.post('/api/feedback/7', (req, res) => {
+
+	var feedback = req.body.feedback;
+
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+	    var stairs = docs[0].beacon.stairs;
+		if(feedback)
+		{
+			stairs++;
+			//update
+			db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.stairs" : stairs }});
+
+		}
+	});
+	res.status(200).json({
+	    success: true
+	});
+
+});
+//-------------------------------------------7. Stairs done---------------------------------------------
+//-------------------------------------------8. Cycling---------------------------------------------
+app.post('/api/find/8', (req, res) => {
+	
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {       
+	   var cycling_done = docs[0].beacon.cycling_done;  
+	   var activity_level = docs[0].activitylevel;
+	   console.log("Activity="+activity_level);
+       if(!cycling_done && activity_level>2)
        {
-       		//send water fountain nearby
+       		//send cycle stand info
        		db.collection('Beacon_Data').find({"b8.name" : "Cycling"}).toArray(function(err, docs) {
        			res.status(200).json({ignore : false, activitytype: "physical", message : docs[0].b8.message, feedback : docs[0].b8.feedback});
        		});
-
        }
        else
        {
@@ -341,6 +432,25 @@ app.post('/api/find/8', (req, res) => {
        }
 	});
 });
+
+
+
+app.post('/api/feedback/8', (req, res) => {
+	var feedback = req.body.feedback;
+	db.collection('User_Profile').find({"_id" : req.body._id}).toArray(function(err, docs) {
+	    
+		if(feedback)
+		{			
+			//update
+			db.collection('User_Profile').updateOne({"_id" : req.body._id}, {$set: {"beacon.cycling_done" : true }});
+		}
+	});
+	res.status(200).json({
+	    success: true
+	});
+});
+
+//-------------------------------------------8.Cycling done---------------------------------------------
 
 app.post('/api/check_username', (req, res) => {
 	db.collection('User_Profile').count({"_id": req.body._id}, function(err, count) {
